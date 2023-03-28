@@ -28,12 +28,19 @@ class JsonStorage
     public static function append(array $data): void
     {
         if (file_exists(self::$filename)) {
-            $fileData = json_decode(file_get_contents(self::$filename));
+            $fileData = json_decode(file_get_contents(self::$filename), true);
 
-            $resultData = [];
-            $resultData[] = $fileData;
+            if (count($fileData) == count($fileData, COUNT_RECURSIVE)) {
+                $resultArray = [];
+                $resultArray[] = $fileData;
+                $resultArray[] = $data;
 
-            self::store($resultData);
+                self::store($resultArray);
+            } else {
+                $fileData[] = $data;
+
+                self::store($fileData);
+            }
         }
     }
 
@@ -45,7 +52,12 @@ class JsonStorage
     public static function read(): array
     {
         if (file_exists(self::$filename)) {
-            return json_decode(file_get_contents(self::$filename));
+            $json = json_decode(file_get_contents(self::$filename));
+
+            if (is_object($json))
+                return [$json];
+
+            return $json;
         }
 
         return [];

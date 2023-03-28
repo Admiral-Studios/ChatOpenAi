@@ -37,12 +37,40 @@ class GptClient
             'body' => json_encode($requestBody)
         ]);
 
-        return json_decode($response->getBody()->getContents());
+        $response = json_decode($response->getBody()->getContents());
+
+        $this->saveContextToJson($userName, $message, $response);
+
+        return $response;
+    }
+
+    public function saveContextToJson(string $userName, string $message, $responseContent)
+    {
+        $historyFilename = ROOT . "/history/{$userName}_history.json";
+
+        $contextData = [
+            'userId' => $responseContent->id,
+            'lastUserText' => $message,
+            'lastChatAnswer' => $responseContent->choices[0]->message->content,
+            'date' => $responseContent->created
+        ];
+
+        JsonStorage::setFilename($historyFilename);
+
+        if ( ! empty(JsonStorage::read())) {
+            JsonStorage::append($contextData);
+        } else {
+            JsonStorage::store($contextData);
+        }
     }
 
     public function getContextFromJson(string $filename): string
     {
         $historyFilename = ROOT . "/history/{$filename}_history.json";
+
+        if ( ! file_exists($historyFilename)) {
+            return '';
+        }
 
         JsonStorage::setFilename($historyFilename);
 
@@ -50,10 +78,10 @@ class GptClient
 
         $context = '';
 
-        if ( ! empty($jsonHistory)) {
-            $lastElement = array_pop($jsonHistory);
-
-            $context = $lastElement->lastUserText . ' ' . $lastElement->lastChatAnswer;
+        if (! empty($jsonHistory)) {
+            foreach ($jsonHistory as $element) {
+                $context .= $element->lastUserText . ' ' . $element->lastChatAnswer;
+            }
         }
 
         return $context;

@@ -26,6 +26,10 @@ class GptClient
             "model" => "gpt-3.5-turbo",
             "messages" => [
                 ([
+                    'role'=> 'system',
+                    'content'=>'You are a grade 3 geometry teacher',
+                    ]),
+                ([
                     'role' => 'user',
                     'content' => (empty($context)) ? $message : $context . ' ' . $message,
                 ])
